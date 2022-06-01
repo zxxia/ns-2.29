@@ -1,0 +1,11 @@
+
+This package contains the ns2 implementation of VCP, a simple congestion control protocol that scales to high-bandwidth, long-delay networks. VCP is described in the following paper.
+
+   Y. Xia, L. Subramanian, I. Stoica, and S. Kalyanaraman. One More Bit Is Enough. In Proceeings of ACM SIGCOMM'05, Philadelphia, PA, August 2005.
+
+You can find the paper from any of the authors' home pages on the Internet, e.g., http://networks.ecse.rpi.edu/~xiay/vcp.html. More information, such as the technical report version of the paper, will be posted here.
+
+If you have any questions, please feel free to contact me at xy12180@gmail.com.
+
+-Yong
+

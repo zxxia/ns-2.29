@@ -1,0 +1,26 @@
+
+Steps to compile VCP in ns2:
+
+1, Download the latest ns2 all-in-one package (currently ns2.29.2) from http://prdownloads.sourceforge.net/nsnam/, install it, and set the required environment variables; (I verified that the provided vcp source code works with ns2.26~29 under Fedora Core 2 & 4.)
+
+2, Suppose you install ns2 under a directory NS_DIR, then do:
+
+     cd $NS_DIR/ns-2.29
+     cp vcp-0.1.tar.gz .
+     tar zxvf vcp-0.1.tar.gz (this will create a "vcp" directory under "ns-2.29")
+
+     cd vcp
+     mv flag.h $NS_DIR/ns-2.29/common
+     mv ns-default.tcl $NS_DIR/ns-2.29/tcl/lib
+     mv Makefile.in $NS_DIR/ns-2.29
+
+3, Under the directory $NS_DIR/ns-2.29, do:
+
+     ./configure
+     make depend
+     make
+
+4, Now you can run 
+
+     ns vcp-sample.tcl
+
