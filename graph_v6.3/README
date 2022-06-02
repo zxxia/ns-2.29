@@ -1,0 +1,13 @@
+
+
+To install this software do the following:
+
+
+1. Set the NS environment variable to point to the root of the
+   NS source code tree.
+
+2. Run the install script.
+
+
+The installation procedure is covered in more detail in 
+doc/graph_user_manual.pdf

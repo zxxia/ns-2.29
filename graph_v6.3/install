@@ -1,0 +1,429 @@
+#!/bin/sh
+
+# This script performs much of the installation procedure
+# for the rpi graph package.  This script assumes that you have
+# already installed an ns distribution, and that this script should
+# copy the files form the RPI graph distribution into the source code
+# of your ns distribution.  Once you have run this script,
+# you will need to manually make a few modifications your NS makefile 
+# as outlined in doc/graph_user_manual.pdf and output by this installation
+# script once the graph package has been copied into the NS source code
+# tree and appropriately configured.
+#
+# As an aside: excuse me for including commentary about Bourne shell 
+# syntax.  I do not often write shell scripts so I included numerous
+# notes so I would be able to interpret this script when looking at it later.
+# I used shell because I assume it would be universally available in UNIX
+# and because I thought it would be a nice exercise.
+#
+# author: David Harrison
+
+echo
+echo
+echo
+echo
+echo
+echo "            NS-2 RPI Graphing and Statistics Package"
+echo 
+echo 
+echo 
+echo "
+This script will help you through the installation process.  Note
+that the script is not fully automatic.  You will have to edit your
+shell initializaton scipt (e.g., .bashrc) and the NS Makefile by hand.
+This script will however prompt you when this is necessary."
+
+
+# Is $NS defined?
+# I'm not sure of the best way to do this.  $var:-default assigns
+# default to variable var if var is not defined or is empty.
+# Assuming var is test_ns, I can then check to see if test_ns is NULL.
+# If test_ns is NULL then either NS is not defined or is empty.
+test_ns=${NS:-NULL}
+test_nsver=${NSVER:-NULL}
+if [ $test_ns = "NULL" -o $test_nsver = "NULL" ]; then
+  echo
+  echo "STEP 1: Set NS and NSVER environment variables"
+  echo "
+Set the NS and NSVER environment variables in your shell 
+initialization script.  The NS environment variable must point
+to the root of the ns source directory tree, and NSVER should
+equal the ns version number.  For example, in an account that 
+uses the bash shell, you might add the following to your 
+.bashrc file:
+  export NS=/home/harrisod/ns-allinone-2.28/ns-2.28
+  export NSVER=2.28
+
+You might also want to take the opportunity to add the NS directory
+to your PATH if it is not already there.
+
+ASIDE: The NS environment variable allows the graph package to function
+without having to compile all of the TCL files directly into the 
+NS executable.
+
+ASIDE: NSVER is necessary for the graph package to build correctly with 
+different versions of NS.
+
+After editing your shell initialization script, log out and log back in
+and rerun this intallation script.
+"
+  exit -1
+else
+ echo "
+STEP 1: Set NS and NSVER environment variables.  DONE."  
+fi
+
+# Check if NS has been installed. ! means negate. -d means check for existence 
+# of a directory.  So "[ ! -d $NS ]" means evaluate to true iff the directory
+# $NS does not exist.
+if [ ! -d $NS ]; then
+  echo "
+The NS environment variable has been defined, but no directory was found
+at this location:
+  $NS
+
+If you have not installed NS then please install it now.  You can get
+NS from http://www.isi.edu/nsnam/ns/"
+  exit -1
+fi
+
+# remove any trailing slash from $NS.  
+#
+# Comment regarding shell and sed:  The backquotes in shell say, "execute
+# what is backquoted first."  Thus,
+#   X=`execme`
+# executes execme and assigns whatever execme outputs to stdout to 
+# the variable named X. Now, a more complex example
+#   X=`echo $Y | blah`
+# pipes the contents of variable Y through some command named blah.  
+# Whatever blah outputs is assigned to X.
+#
+# To strip off the last slash we use sed.  sed interprets regular expressions
+# similarly to perl.  For example,
+#  sed 's/text/newtext/'
+# substitutes "newtext" for any instance of "text" in whatever comes from
+# stdin and then outputs the results to stdout.
+#
+# To strip off a slash, we use the following:
+#  sed 's/\/$//' 
+#         ^ ^ ^
+#         | | |
+#         | | // means replace with nothing.
+#         | only match at the end of the line.
+#         backslash means interpret the next character literally. 
+#       
+NS=`echo $NS | sed 's/\/$//'`
+
+#########################################
+# STEP 2
+echo "
+STEP 2: Backup NS.
+
+We suggest you backup your NS source code tree before continuing with 
+this installation.  Would you like this script to backup 
+  $NS
+to
+  $NS.bak"
+
+answer=blah
+while [ "$answer" != "y" -a "$answer" != "n" ]
+do
+  echo -n "(y/n)? "
+  read answer
+
+  # if answer is y then backup $NS
+  if [ "$answer" = "y" ]; then
+    echo -n "Backing up $NS..."
+    rm -rf $NS.bak
+    cp -rf $NS $NS.bak
+    echo "  DONE."
+  elif [ "$answer" = "n" ]; then 
+    echo "
+Ok.  We did not backup the NS installation.  Do you want to proceed with
+installing the graph package?"
+    answer=blah
+    while [ "$answer" != "y" -a "$answer" != "n" ]
+    do
+      echo -n "(y/n)? "
+      read answer
+      if [ "$answer" = "n" ]; then
+        echo "ABORTING.  Rerun installation to install the RPI ns-2 Graphing
+and Statistics package."
+        exit -1
+      fi
+    done
+  fi
+done
+
+#########################################
+# STEP 3
+# if we have ns or tcl in the path then execute tcl/rpi/configure.tcl.
+if [ -d $NS/rpi -o -d $NS/tcl/rpi ]; then
+  echo "
+STEP 3: Searching for old versions of the graph package.
+
+The \$NS/rpi or \$NS/tcl/rpi directories already exists.  
+Either you or this script can remove the prior installation.
+This step will not edit the \$NS/Makefile even though it may
+contain references to \$NS/rpi. 
+
+Would you like this script to remove the prior installation of the 
+graph package?"
+
+  # old version was found so ask if we should remove it.
+  answer=blah
+  while [ "$answer" != "y" -a "$answer" != "n" ]
+  do
+    echo -n "(y/n)? "
+    read answer
+
+    # if answer is y then remove $NS/tcl/rpi and $NS/rpi
+    if [ "$answer" = "y" ]; then
+      rm -rf $NS/tcl/rpi
+      rm -rf $NS/rpi
+    fi
+  done
+
+  # if the user chose to not remove the prior version then 
+  # ask the user whether he or she wants to overwrite the old version
+  # or abort the script.
+  if [ "$answer" = "n" ]; then
+    echo "  
+You have chosen not to remove the prior installation.  Do you 
+want to install over the prior installation?"
+    answer=blah
+    while [ "$answer" != "y" -a "$answer" != "n" ]
+    do
+      echo -n "(y/n)? "
+      read answer
+
+      if [ "$answer" = "n" ]; then
+        echo "
+Ok.  This script will not install over the prior version of the RPI ns-2
+Graphing and Statistics package.  The script will now abort.  If you 
+want to install the newer version of RPI ns-2 Graphing and Statistics 
+package then remove the old version either manually or by rerunning 
+this install script.
+
+ABORTING."
+        exit -1
+      fi
+    done;
+  fi
+
+# Else no prior installation was found.
+else
+  echo "
+STEP 3: Searching for installed versions of the graph package.  NONE FOUND."
+fi
+
+#########################################
+# STEP 4
+# copy the files into the NS distribution. (-n in "echo -n" means no newline.)
+echo -n "
+STEP 4: Copying rpi and tcl/rpi directories into the NS source code tree."
+cp -r rpi $NS
+cp -r tcl/rpi $NS/tcl
+echo "  DONE."
+
+#########################################
+# STEP 5
+echo "
+STEP 5: Configuring applications used by the graph package.
+"
+
+# Calls which to see if ns is in the path.  The resulting path is put in
+# ns_path.  If there is no ns in the path then an error is output to stderr.
+# We direct stderr to /dev/null to prevent the error from being displayed
+# to the user.  When no ns is found in the path, ns_path becomes empty.
+ns_path=`which ns 2> /dev/null`
+
+# the "-f" considers the next argument as a filename and checks whether
+# that file exists.  $ns_path would substitute the value assigned to ns_path.
+# However, ns_path may be empty which for some reason causes -f to always
+# evaluate to true.  We want the statement to evaluate to false if 
+# ns_path is empty.  ${var-default} checks whether the variable "var" 
+# exists and assigns a default value if it does not.  ${var:-default}
+# checks whether the variable "var" exists or has an empty value and assigns
+# the default value if either is true.  ${ns_path:-/} assigns the default
+# value of "/" if either ns_path is not defined or is empty.  [-f /] evaluates
+# to false, thus if "which" in the previous statement returned an empty
+# string then ns_path_found will be set to 0.
+if [ -f ${ns_path:-/} ]; then
+
+  # run the configuration script.
+  cd $NS/tcl/rpi
+  ns configure.tcl
+
+  echo
+
+# else ns could not be found so search for tcl.
+else
+  tcl_path=`which tcl 2> /dev/null`
+
+  # See the comment for "if [ -f ${ns_path:-/} ]" for an exlanation of the next
+  # if statement.
+  if [ -f ${tcl_path:-/} ]; then
+
+    # run the configure script.
+    # (The rest of the script is written in TCL)
+    cd $NS/tcl/rpi
+    tcl configure.tcl
+    echo
+
+  # else tcl was not found so give up.  We have no way to run app
+  # configuration script.
+  else
+    echo "
+ERROR. Either the ns or tcl executables needs to be in the path in 
+order to configure the RPI graph package."
+    exit -1
+  fi
+fi
+
+#echo "
+#STEP 6: Use map or hash_map?
+#
+#The delay monitor class can use either the STL map class of the 
+#non-standard hash_map class.  The hash_map may be slightly faster
+#in some simulations, but the graph package will not compile 
+#properly on some platforms.  The version using map should compile
+#on any system that has STL.
+#"
+echo "
+/**
+ * This is an automatically generated file.
+ */
+#ifndef GRAPH_CONFIG_H
+#define GRAPH_CONFIG_H
+
+//#define DELAY_MONITOR_USER_HASH_MAP
+//#define HASH_MAP_HEADER \"ext/hash_map\"
+#endif
+" > $NS/rpi/graph-config.h
+
+#########################################
+# STEP 6
+echo "
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+This script does not perform the remaining steps automatically.
+
+STEP 6: Insert the following lines in your ns Makefile 
+
+      INCLUDES= \\
+         -I. -Irpi \\
+      [...]
+      OBJ_CC= \\
+         rpi/byte-counter.o rpi/delay-monitor.o rpi/file-tools.o \\
+         rpi/rate-monitor.o rpi/rpi-flowmon.o rpi/rpi-queue-monitor.o \\
+      [...]
+  
+    Here "INCLUDES=" and "OBJ_CC=" already appear in the Makefile.
+    "[...]" refers to an omission of lines already appearing in your Makefile.
+
+    If you are using ns-2.1b5 then add this to your Makefile
+      DEFINE  = -DNS21B5 [...]
+
+    Similarly for ns-2.1b7 add -DNS21B7 or for ns-2.1b9a add -DNS21B9A.
+    Later versions do not currently require defining the version number.
+
+  Once you have done this manually, hit return to continue the script."
+read answer
+
+
+#########################################
+# STEP 7
+echo "
+STEP 7: Rebuilding ns."
+
+echo -n "  Removing generated files \$NS/gen/*." 
+cd $NS; rm -f gen/*
+echo "  DONE."
+
+echo -n "  Computing dependencies (make depend)."
+cd $NS; make depend > /dev/null
+echo "  DONE."
+
+echo -n "  Calling make to build ns executable."
+cd $NS; make > /dev/null
+echo "  DONE."
+
+# Test whether the .o files were created for RPI Graphing and Statistics 
+# package.
+while [ ! -f $NS/rpi/byte-counter.o -o \
+        ! -f $NS/rpi/delay-monitor.o -o \
+        ! -f $NS/rpi/file-tools.o  -o \
+        ! -f $NS/rpi/rate-monitor.o -o \
+        ! -f $NS/rpi/rpi-flowmon.o  -o \
+        ! -f $NS/rpi/rpi-queue-monitor.o -o \
+        ! -f $NS/ns ]
+do
+  echo "
+  ns-2 did not compile correctly with the RPI ns-2 Graphing and Statistics 
+  Package.  Either the ns executable is missing from the \$NS directory, or 
+  one or more of the .o files are missing in the \$NS/rpi directory.
+
+  If you wish to abort this script then hit ctrl-c. Otherwise, 
+  when you have successfully built the RPI graph package,
+  hit return to continue to the next step in the script."
+
+  read answer
+done
+      
+
+# COMMENTED BY D. Harrison
+# (It is not necessary for ns to be in the path.  If I must, I can run
+# the test-suite using $NS/ns, since we know $NS.)
+#
+# Make sure ns is in the path.
+#ns_found="false"
+#
+#while [ ns_found="false" ] 
+#do
+#
+#  if [ -f $NS/ns ]; then
+#
+#    echo "
+#After building ns, the executable was found in \$NS, but it is not
+#in the path.  Please edit your login script to add \$NS to the path.
+#  else
+#
+#  echo "
+#  The NS executable is not in the path.  Please add \$NS to the path.
+#  "
+#done
+# END COMMENTED BY D. Harrison
+
+# Final step.  Ask if the user wants to run the test suite.
+echo "
+Now that ns has been built with the graph package, would you like to
+run the test suite?"
+
+answer=blah
+while [ "$answer" != "y" -a "$answer" != "n" ]
+do
+  echo -n "(y/n)? "
+  read answer
+
+  if [ "$answer" = "n" ]; then
+    echo "
+Ok.  We will not run the test-suite now.  You can run the test-suite at 
+any time by running 
+  \$NS/tcl/rpi/tests/run-test-suite.sh and running
+
+You have now completed the installation of the RPI graphing and 
+statistics package.
+
+Thank you.
+"
+  elif [ "$answer" = "y" ]; then
+    cd $NS/tcl/rpi/tests; ./run-test-suite.sh
+  fi
+
+done
+
+
+
+
+

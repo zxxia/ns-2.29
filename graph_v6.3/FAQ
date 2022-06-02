@@ -1,0 +1,162 @@
+Frequently Asked Questions
+
+----------------------------------------------------------
+What versions of ns does the graph package currently support?
+
+It has been tested with
+  ns-2.1b9a, ns-2.26, ns-2.28, ns-2.31
+
+----------------------------------------------------------
+What platforms does the Graph package work on?
+
+The graph package has only been tested in Sun Solaris and
+RedHat Linux 6.2, 7.1, 8.0, and Ubuntu 6.06.1. The Graph package expects
+the existence of certain utilities that are usually 
+only included with UNIX (e.g., xgraph, gnuplot, latex, xdvi,
+ghostview).  I have made no attempt to get the graph package
+to work with Microsoft Windows.  
+
+----------------------------------------------------------
+Why does my simulation run so slowly when I generate graphs?
+
+The Graph objects generate trace files. Outputting to these
+trace files slows down a simulation.  You can often
+speed up a simulation by telling a graph class to 
+output average or sampled values every time interval rather than 
+outputting instantaneous values (e.g., see Graph/QLenVersusTime in graph.tcl).  
+Here the time interval is configureable allowing you to choose the 
+appopriate trade-off between simulation run-times and the granularity of 
+information you want displayed in your graphs.
+
+----------------------------------------------------------
+Why is my hard drive full?
+
+If you have been running a large number of simulations with graphs
+or nam trace files then you may have many large files in /tmp/expXX
+directories where XX is replaced with a nonnegative integer.
+
+The Graph baseclass comes with a "clean" instproc that tells the
+graph's plot device to delete intermediate files.  All of the Graph
+classes in the RPI graph.tcl file extend this instproc to 
+remove their own intermediate files.  However, "clean" is not called 
+automatically and many people neglect to call "clean" to remove a graph's 
+intermediate files.  Furthermore, when people subclass Graph they often 
+do not spend the time to extend "clean" to remove the subclass's 
+intermediate files.
+
+To solve this problem the user should occassionally delete all of the 
+old /tmp/expXX directories.  In fact when I run simulations, I prefer
+periodically deleting /tmp/expXX rather than calling clean.
+
+----------------------------------------------------------
+Why is installation so complicated?
+
+The installation script is only partially automated.  I intend to improve 
+the installation procedure in later releases.   Or perhaps I will
+release a version of ns-2 with ns2graph bundled.
+
+----------------------------------------------------------
+Why can't I display using the xgraph, gnuplot, ... plot device?
+
+There are several possible reasons.  Consider the following:
+ 1. Have you installed the corresponding program launched by
+    the xgraph, gnuplot, etc. plot device? 
+   xgraph, gnuplot, acroread, ghostview, xdvi, latex, etc. are not 
+   included as part of the graph package.  They must be installed
+   separately.  Often they are included as part of your UNIX distribution.
+
+ 2. Is xgraph, gnuplot, ... in your path?
+
+   If these applications are not in your PATH then the installation
+   script will query you for the path to the application executable.
+   If you upgrade your UNIX installation, this may invalidate that paths
+   to some of your application.  If an application suddenly is no longer
+   available to NS then do the following:
+     > cd $NS/tcl/rpi
+     > ns configure.tcl
+   
+
+ 3. Do you have an old version of gnuplot?
+
+   gnuplot is used as intermediate plot device for many of 
+   the other plot device's (e.g., postscript, xdvi, latex, ghostview, 
+   acroread).  However, if you have gnuplot version 3.5 then you should
+   use gnuplot35.  If you have an even earlier version of gnuplot
+   then the graph package is unlikely to work with your version of gnuplot.
+
+   Unfortunately it is not immediately obvious how to force the
+   plot devices that use gnuplot as an intermediate step to switch over
+   to version 3.5 compatibility.  I solved this problem by introducing
+   the concept of "low level plotters."  Each graph that does not
+   directly interface with a graph generating application excepts a
+   "low_level_plotter" argument to its init instproc.  This 
+   "low_level_plotter" object is nothing more than another plot device
+   that generates output for the current plot device.  For example,
+
+    set low_level_plotter [new gnuplot35]
+    Graph set plot_device_ [new postscript $low_level_plotter]
+
+   tells postscript to use the gnuplot 3.5 plot device to generate
+   the graph rather than the default gnuplot plot device.
+
+   The problem gets a little more complicated when more than two 
+   plot device objects are used in the construction of output.
+   Take for example the acroread object.  An acroread plot device object
+   directly calls pdflatex on a latex file.  However, to first 
+   generate the latex file, the acroread plot device object calls
+   the latex plot device as a low_level_plotter.  The latex plot
+   device in turn calls pdf as a low_level_plotter to generate
+   graphs that are referenced by the latex.  The pdf plot device
+   then calls gnuplot as a low level plotter.  The gnuplot plot 
+   device then calls the gnuplot application directly.  Thus forcing 
+   acroread to use gnuplot35 requires the following:
+    set lowest_level_plotter [new gnuplot35]
+    set pdf_plotter [new pdf $lowest_level_plotter]
+    set latex_plotter [new latex $pdf]
+    Graph set plot_device_ [new acroread $latex_plotter]
+      
+   Currently I assume that the set of plot devices used to generate
+   output is just a list (as opposed to a directed tree or directed graph). 
+   So far this has been sufficiently powerful to handle my needs. 
+
+ 4. Did your simulation generate any plot data?
+   (see "Why do I get an `empty x range' error?")
+
+If your problem does not fit any of the above four causes then you may have
+found a bug in the Graph implementation (see "Who do I contact if I find
+a bug?").
+
+----------------------------------------------------------
+Why do I get an "empty x range" error?
+
+Do you see an error like the following?
+  ns: finish: Warning: empty x range [0:0], adjusting to [0:1]
+  Warning: empty y range [0:0], adjusting to [0:1]
+      while executing
+  "exec gnuplot "$command_filename_.gnuplot" "
+  ...
+
+gnuplot generates the above error (actually warning) message 
+usually when the simulation script is misconfigured.  It 
+occurs when a graph does not see any plot data.  Common reasons
+are failing to correctly add sources to the topology,
+running a simulation too short, or placing a graph on a link that
+does not see any traffic.
+
+----------------------------------------------------------
+Whom do I contact if I find a bug?
+
+First go to the help forum at 
+
+  http://www.sourceforge.net/projects/ns2graph
+
+Search the help forum.  If that doesn't help then go back to the URL above, 
+scroll half-way down the page, click on "Bugs."
+If you don't find your bug then report one.
+
+This code was initially developed and has been traditionally 
+maintained by Dr. David Harrison while he was at RPI, then at 
+Berkeley.  He now manages development via sourceforge.
+
+
+
