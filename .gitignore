@@ -33,3 +33,5 @@
 
 # Makefile should be auto-generated.
 Makefile
+.ccls
+.ccls-cache
