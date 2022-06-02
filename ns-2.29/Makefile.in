@@ -58,9 +58,10 @@ STATIC	= @V_STATIC@
 LDFLAGS	= @LDFLAGS@
 LDOUT	= -o $(BLANK)
 
-DEFINE	= -DTCP_DELAY_BIND_ALL -DNO_TK @V_DEFINE@ @V_DEFINES@ @DEFS@ -DNS_DIFFUSION -DSMAC_NO_SYNC -DCPP_NAMESPACE=@CPP_NAMESPACE@ -DUSE_SINGLE_ADDRESS_SPACE -Drng_test
+DEFINE	= -DTCP_DELAY_BIND_ALL -DNO_TK @V_DEFINE@ @V_DEFINES@ @DEFS@ -DNS_DIFFUSION -DSMAC_NO_SYNC -DCPP_NAMESPACE=@CPP_NAMESPACE@ -DUSE_SINGLE_ADDRESS_SPACE -Drng_test -fpermissive
 
 INCLUDES = \
+    -I. -Irpi \
 	-I. \
 	@V_INCLUDES@ \
 	-I./xcp -I./vcp \
@@ -150,6 +151,8 @@ NS_TCL_LIB_STL = tcl/lib/ns-diffusion.tcl
 # !include <conf/makefile.win>
 
 OBJ_CC = \
+	rpi/byte-counter.o rpi/delay-monitor.o rpi/file-tools.o \
+    rpi/rate-monitor.o rpi/rpi-flowmon.o rpi/rpi-queue-monitor.o \
 	tools/random.o tools/rng.o tools/ranvar.o common/misc.o common/timer-handler.o \
 	common/scheduler.o common/object.o common/packet.o \
 	common/ip.o routing/route.o common/connector.o common/ttl.o \
