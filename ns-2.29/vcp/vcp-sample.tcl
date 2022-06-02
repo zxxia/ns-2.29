@@ -4,6 +4,9 @@
 # source rpi graph scripts
 source $env(NS)/tcl/rpi/graph.tcl
 source $env(NS)/tcl/rpi/script-tools.tcl
+
+Graph set plot_device_ [new pdf]
+
 # input parameters
 set num_btnk        1 ;# number of bottleneck(s)
 set btnk_bw        10 ;# bottleneck capacity, Mbps
@@ -72,6 +75,7 @@ proc finish {} {
     $cwnd0_graph display
     # run-nam
 
+    [Graph set plot_device_] close
     exit 0
 }
 
@@ -162,14 +166,20 @@ for { set i 0 } { $i < $num_rev_flow } { incr i } {
 }
 # End: agents and sources --------------------------------------
 
+
+set tmp_directory_ "vcp_sim_results"
+
 set util_graph [new Graph/UtilizationVersusTime $r(0) $r(1) 0.1]
 $util_graph set title_ "Bottleneck Utilization vs Time"
+$util_graph set output_filename_ "${tmp_directory_}/bneck_util_vs_time"
 
 set qlen_graph [new Graph/QLenVersusTime $r(0) $r(1)]
 $qlen_graph set title_ "Bottleneck Queue Length Versus Time"
+$qlen_graph set output_filename_ "${tmp_directory_}/bneck_qlen_vs_time"
 
 set cwnd0_graph [new Graph/CWndVersusTime $tcp(0)]
 $cwnd0_graph set title_ "cwnd of flow 0 versus Time"
+$cwnd0_graph set output_filename_ "${tmp_directory_}/cwnd0_vs_time"
 
 # Run the simulation
 $ns at $sim_time "finish"
