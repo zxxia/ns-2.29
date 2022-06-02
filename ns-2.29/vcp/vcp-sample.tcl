@@ -1,6 +1,9 @@
 # sample vcp ns2 simulation script 
 # by yong xia (xy12180@google.com)
 
+# source rpi graph scripts
+source $env(NS)/tcl/rpi/graph.tcl
+source $env(NS)/tcl/rpi/script-tools.tcl
 # input parameters
 set num_btnk        1 ;# number of bottleneck(s)
 set btnk_bw        10 ;# bottleneck capacity, Mbps
@@ -58,9 +61,16 @@ proc set-link-bw { n0 n1 } {
 proc finish {} {
     global ns ns_trace nam_trace ns_file nam_file 
 
+    global util_graph qlen_graph cwnd0_graph
+
     $ns flush-trace
     if { $ns_trace }  { close $ns_file }
     if { $nam_trace } { close $nam_file }
+
+    $util_graph display
+    $qlen_graph display
+    $cwnd0_graph display
+    # run-nam
 
     exit 0
 }
@@ -128,7 +138,7 @@ $start_time_rnd use-rng $start_time_RNG
 for { set i 0 } { $i < $num_ftp_flow } { incr i } {
 
 	set tcp($i) [$ns create-connection $SRC $s($i) $SINK $d($i) $i]
-	
+
 	set ftp($i) [$tcp($i) attach-source FTP]
 
 	set start_time [expr [$start_time_rnd value] / 1000.0]
@@ -151,6 +161,15 @@ for { set i 0 } { $i < $num_rev_flow } { incr i } {
     $ns at $stop_time "$rftp($i) stop"
 }
 # End: agents and sources --------------------------------------
+
+set util_graph [new Graph/UtilizationVersusTime $r(0) $r(1) 0.1]
+$util_graph set title_ "Bottleneck Utilization vs Time"
+
+set qlen_graph [new Graph/QLenVersusTime $r(0) $r(1)]
+$qlen_graph set title_ "Bottleneck Queue Length Versus Time"
+
+set cwnd0_graph [new Graph/CWndVersusTime $tcp(0)]
+$cwnd0_graph set title_ "cwnd of flow 0 versus Time"
 
 # Run the simulation
 $ns at $sim_time "finish"
