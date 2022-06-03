@@ -40,6 +40,13 @@ VcpSrcAgent::VcpSrcAgent() : RenoTcpAgent(), md_wait_timer_(this), pacing_timer_
     init_mimwai_para_table();
     g_mimwai_initialized = true;
     //fprintf(stdout, "S -- Cstr: init_mimwai_para_table is called.\n");
+    fprintf(stdout, "S -- Cstr: init_mimwai_para_table is called.\n");
+    for (int j = 0; j < NUM_TABLE; j++) {
+        for (int k = 0; k < NUM_XI_INDEX; k++) {
+            fprintf(stdout, "%.3f, ", g_mimwai[j][k]);
+        }
+        fprintf(stdout, "\n");
+    }
   }
 
   // init
@@ -217,10 +224,12 @@ void VcpSrcAgent::opencwnd()
 	
 	ai = rtt_by_td_square_times_alpha_w_ / cwnd_;
 	ai_limiter = g_mimwai[ AI_LIMITER_TABLE_NUM ][ index ];
-	increment = (ai < ai_limiter) ? ai : ai_limiter;
+	// increment = (ai < ai_limiter) ? ai : ai_limiter;
+    // added by Zhengxu: remove ai_limiter for now
+    increment = ai;
 	
 #ifdef DEBUG_SRC_MORE
-	fprintf(stdout, "S -- opencwnd: action_=%s, cwnd_=%.3f, ai=%.3f, ai_limiter=%.3f, increment=%.3f at %.3fs.\n", "AI", (double)cwnd_, ai, ai_limiter, increment, now);
+	fprintf(stdout, "S -- opencwnd: action_=%s, cwnd_=%.3f, index=%d, ai=%.3f, ai_limiter=%.3f, increment=%.3f at %.3fs.\n", "AI", (double)cwnd_, index, ai, ai_limiter, increment, now);
 #endif
       } else if (action_ == ACTION_MI) {
 	
@@ -235,11 +244,14 @@ void VcpSrcAgent::opencwnd()
 	xi_by_cwnd = g_mimwai[ MI_PARA_TABLE_NUM ][ index ];
 
 	/* get the minimum and scale it */
-	xi_ = (xi_by_cwnd > xi_by_lf_) ? xi_by_lf_ : xi_by_cwnd;
+	// xi_ = (xi_by_cwnd > xi_by_lf_) ? xi_by_lf_ : xi_by_cwnd;
+
+    // add by zhengxu: remove the xi_by_cwnd limit.
+    xi_ = xi_by_lf_;
 	increment = pow(1.0 + xi_, rtt_by_trho_) - 1.0;
 	
 #ifdef DEBUG_SRC_MORE
-	fprintf(stdout, "S -- opencwnd: action_=%s, cwnd_=%.3f, mw=%.3f, mw_limiter=%.3f, increment=%.3f at %.3fs.\n", "MI", (double)cwnd_, mw, mw_limiter, increment, now);
+    fprintf(stdout, "S -- opencwnd: action_=%s, cwnd_=%.3f, index=%d, xi_by_cwnd=%.5f, xi_by_lf=%.5f, xi=%.5f, rtt_by_trho=%.3f, increment=%.3f at %.3fs.\n", "MI", (double)cwnd_, index, xi_by_cwnd, xi_by_lf_, xi_, rtt_by_trho_, increment, now);
 #endif
       }
       

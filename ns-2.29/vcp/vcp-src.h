@@ -12,8 +12,8 @@ extern bool g_mimwai_initialized;
 extern double g_mimwai[NUM_TABLE][NUM_XI_INDEX];
 
 
-//#define DEBUG_SRC
-//#define DEBUG_SRC_MORE
+#define DEBUG_SRC
+#define DEBUG_SRC_MORE
 //#define DEBUG_SRC_MORE2
 //#define DEBUG_RUNTIME
 
