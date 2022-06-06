@@ -221,25 +221,28 @@ void VcpQueueLoadMeasurementTimer::expire(Event *)
 #endif
 
   // adjust target utilization every a number of measurement intervals
-  a_->utilization_ += util;
-  a_->utilization_adjustment_counter_ ++;
-
-  if (a_->utilization_adjustment_counter_ == NUM_T_RHO) {
-
-    tu = (unsigned int)(10000.0 * a_->target_utilization_);
-    au = (unsigned int)(10000.0 * a_->utilization_ / (double)NUM_T_RHO + 0.5);
-
-    if      (au < tu) a_->dynamic_target_utilization_ += a_->utilization_adjustment_stepsize_;
-    else if (au > tu) a_->dynamic_target_utilization_ -= a_->utilization_adjustment_stepsize_;
-
-    if (a_->dynamic_target_utilization_ > MAX_TARGET_UTILIZATION)
-      a_->dynamic_target_utilization_ = MAX_TARGET_UTILIZATION;
-    if (a_->dynamic_target_utilization_ < MIN_TARGET_UTILIZATION)
-      a_->dynamic_target_utilization_ = MIN_TARGET_UTILIZATION;
-
-    a_->utilization_ = 0.0;
-    a_->utilization_adjustment_counter_ = 0;
-  }
+  // a_->utilization_ += util;
+  // a_->utilization_adjustment_counter_ ++;
+  //
+  // if (a_->utilization_adjustment_counter_ == NUM_T_RHO) {
+  //
+  //   tu = (unsigned int)(10000.0 * a_->target_utilization_);
+  //   au = (unsigned int)(10000.0 * a_->utilization_ / (double)NUM_T_RHO + 0.5);
+  //
+  //   if      (au < tu) a_->dynamic_target_utilization_ += a_->utilization_adjustment_stepsize_;
+  //   else if (au > tu) a_->dynamic_target_utilization_ -= a_->utilization_adjustment_stepsize_;
+  //
+  //   if (a_->dynamic_target_utilization_ > MAX_TARGET_UTILIZATION)
+  //     a_->dynamic_target_utilization_ = MAX_TARGET_UTILIZATION;
+  //   if (a_->dynamic_target_utilization_ < MIN_TARGET_UTILIZATION)
+  //     a_->dynamic_target_utilization_ = MIN_TARGET_UTILIZATION;
+  //   fprintf(stdout,
+  //           "util=%.4f, lf=%.4f, utilization_=%.4f, dynamic_target_utilization=%.4f, target_utilization=%.4f\n",
+  //           util, a_->load_factor_, a_->utilization_, a_->dynamic_target_utilization_, a_->target_utilization_);
+  //
+  //   a_->utilization_ = 0.0;
+  //   a_->utilization_adjustment_counter_ = 0;
+  // }
 
   // re-initialization for the next interval
   a_->load_ = 0;

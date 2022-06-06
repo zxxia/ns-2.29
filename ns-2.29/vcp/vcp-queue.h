@@ -9,8 +9,8 @@
 #include "vcp-cmn.h" // for LF_[]
 
 
-//#define DEBUG_QUEUE
-//#define DEBUG_QUEUE_MORE
+#define DEBUG_QUEUE
+#define DEBUG_QUEUE_MORE
 
 
 #define NUM_T_RHO  10 // "time constant" for utilization adjustment

@@ -214,22 +214,16 @@ void VcpSrcAgent::opencwnd()
 
     case 10:
       /* vcp -xy */
-      double ai, ai_limiter, xi_by_cwnd; //, mw, mw_limiter;
-      unsigned int index;
+      double ai, xi_by_cwnd; //, mw, mw_limiter;
       
-      // get the index to the tables: xi, mwl, ail
-      index = lookup_mimwai_para_index(cwnd_);
-
       if (action_ == ACTION_AI) {
 	
 	ai = rtt_by_td_square_times_alpha_w_ / cwnd_;
-	ai_limiter = g_mimwai[ AI_LIMITER_TABLE_NUM ][ index ];
-	// increment = (ai < ai_limiter) ? ai : ai_limiter;
     // added by Zhengxu: remove ai_limiter for now
     increment = ai;
 	
 #ifdef DEBUG_SRC_MORE
-	fprintf(stdout, "S -- opencwnd: action_=%s, cwnd_=%.3f, index=%d, ai=%.3f, ai_limiter=%.3f, increment=%.3f at %.3fs.\n", "AI", (double)cwnd_, index, ai, ai_limiter, increment, now);
+	fprintf(stdout, "S -- opencwnd: action_=%s, cwnd_=%.3f, ai=%.3f, increment=%.3f at %.3fs.\n", "AI", (double)cwnd_, ai, increment, now);
 #endif
       } else if (action_ == ACTION_MI) {
 	
@@ -240,18 +234,12 @@ void VcpSrcAgent::opencwnd()
 	/* firstly, xi_by_lf, precomputed */
 	//xi_by_lf_ = k_ * (100.0 / (double)load_factor_ - 1.0);
 	
-	/* secondly, xi_by_cwnd, lookup */
-	xi_by_cwnd = g_mimwai[ MI_PARA_TABLE_NUM ][ index ];
-
-	/* get the minimum and scale it */
-	// xi_ = (xi_by_cwnd > xi_by_lf_) ? xi_by_lf_ : xi_by_cwnd;
-
     // add by zhengxu: remove the xi_by_cwnd limit.
     xi_ = xi_by_lf_;
 	increment = pow(1.0 + xi_, rtt_by_trho_) - 1.0;
 	
 #ifdef DEBUG_SRC_MORE
-    fprintf(stdout, "S -- opencwnd: action_=%s, cwnd_=%.3f, index=%d, xi_by_cwnd=%.5f, xi_by_lf=%.5f, xi=%.5f, rtt_by_trho=%.3f, increment=%.3f at %.3fs.\n", "MI", (double)cwnd_, index, xi_by_cwnd, xi_by_lf_, xi_, rtt_by_trho_, increment, now);
+    fprintf(stdout, "S -- opencwnd: action_=%s, cwnd_=%.3f, xi_by_cwnd=%.5f, xi_by_lf=%.5f, xi=%.5f, rtt_by_trho=%.3f, increment=%.3f at %.3fs.\n", "MI", (double)cwnd_, xi_by_cwnd, xi_by_lf_, xi_, rtt_by_trho_, increment, now);
 #endif
       }
       
