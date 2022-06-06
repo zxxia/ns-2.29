@@ -29,8 +29,7 @@ public:
 
 VcpQueue::VcpQueue() : DropTail2(), queue_sampling_timer_(this), load_measurement_timer_(this), 
   load_(0), steady_queue_(0), last_queue_sum_(0), last_queue_times_(0), load_factor_(0),
-  load_factor_encoded_(0), target_utilization_(0.95), dynamic_target_utilization_(0.95), 
-  utilization_(0.0), utilization_adjustment_stepsize_(0.01), utilization_adjustment_counter_(0)
+  load_factor_encoded_(0), target_utilization_(0.95), dynamic_target_utilization_(0.95)
 {
   // init lf table
   lf_[0] = LF_0;
@@ -70,7 +69,6 @@ int VcpQueue::command(int argc, const char*const* argv)
 	fprintf(stdout, "Q -- command: set-link-capacity error, capacity_=%.1f bps.\n", capacity_);
 	exit(1);
       }
-      set_target_utilization(capacity_);
 #ifdef DEBUG_QUEUE_MORE
       fprintf(stdout, "Q -- command: capacity_=%.1f bps, target_utilization_=%.3f.\n", capacity_, target_utilization_);
 #endif
@@ -79,45 +77,6 @@ int VcpQueue::command(int argc, const char*const* argv)
   }
    
   return (DropTail2::command(argc, argv));
-}
-
-void VcpQueue::set_target_utilization(double capacity)
-{
-  #define Ten            10.0
-  #define Hnd           100.0
-  #define Kilo         1000.0
-  #define Mega  (Kilo * Kilo)
-  #define Giga  (Kilo * Mega)
-  #define Tera  (Mega * Mega)
-
-  double round = 0.34;
-  int c_1T   = (int)(capacity /        Tera  + round);
-  int c_100G = (int)(capacity / (Hnd * Giga) + round);
-  int c_10G  = (int)(capacity / (Ten * Giga) + round);
-  int c_1G   = (int)(capacity /        Giga  + round);
-  int c_100M = (int)(capacity / (Hnd * Mega) + round);
-  int c_10M  = (int)(capacity / (Ten * Mega) + round);
-  int c_1M   = (int)(capacity /        Mega  + round);
-  int c_100K = (int)(capacity / (Hnd * Kilo) + round);
-  int c_10K  = (int)(capacity / (Ten * Kilo) + round);
-  int c_1K   = (int)(capacity /        Kilo  + round);
-
-  if (c_1T)        { target_utilization_ = 0.993;  utilization_adjustment_stepsize_ = 0.001; } // 1Tbps
-  else if (c_100G) { target_utilization_ = 0.992;  utilization_adjustment_stepsize_ = 0.001; } 
-  else if (c_10G)  { target_utilization_ = 0.990;  utilization_adjustment_stepsize_ = 0.001; } 
-  else if (c_1G)   { target_utilization_ = 0.985;  utilization_adjustment_stepsize_ = 0.002; } // 1Gbps
-  else if (c_100M) { target_utilization_ = 0.975;  utilization_adjustment_stepsize_ = 0.003; } 
-  else if (c_10M)  { target_utilization_ = 0.960;  utilization_adjustment_stepsize_ = 0.004; } 
-  else if (c_1M)   { target_utilization_ = 0.940;  utilization_adjustment_stepsize_ = 0.005; } // 1Mbps
-  else if (c_100K) { target_utilization_ = 0.920;  utilization_adjustment_stepsize_ = 0.006; } 
-  else if (c_10K)  { target_utilization_ = 0.890;  utilization_adjustment_stepsize_ = 0.008; } 
-  else if (c_1K)   { target_utilization_ = 0.850;  utilization_adjustment_stepsize_ = 0.010; } // 1Kbps
-  else             { target_utilization_ = 0.800;  utilization_adjustment_stepsize_ = 0.020; }
-
-  //target_utilization_ = 1.0;  
-  //utilization_adjustment_stepsize_ = 0.01;
-  
-  return;
 }
 
 void VcpQueue::enque(Packet* p)
@@ -219,30 +178,6 @@ void VcpQueueLoadMeasurementTimer::expire(Event *)
     fprintf(stdout, "Q -- load_=%8d, steady_queue_=%8d,  util=%1.3f, lf=%3.1f\%, load_factor_=%3d\% (raw) at %.3fs.\n", a_->load_, a_->steady_queue_, util, lfd, a_->load_factor_, a_->interval_end_);
   //fprintf(stdout, "Q -- capacity_=%.1f, \ttime=%.1f at %.3fs.\n", a_->capacity_, time, a_->interval_end_);
 #endif
-
-  // adjust target utilization every a number of measurement intervals
-  // a_->utilization_ += util;
-  // a_->utilization_adjustment_counter_ ++;
-  //
-  // if (a_->utilization_adjustment_counter_ == NUM_T_RHO) {
-  //
-  //   tu = (unsigned int)(10000.0 * a_->target_utilization_);
-  //   au = (unsigned int)(10000.0 * a_->utilization_ / (double)NUM_T_RHO + 0.5);
-  //
-  //   if      (au < tu) a_->dynamic_target_utilization_ += a_->utilization_adjustment_stepsize_;
-  //   else if (au > tu) a_->dynamic_target_utilization_ -= a_->utilization_adjustment_stepsize_;
-  //
-  //   if (a_->dynamic_target_utilization_ > MAX_TARGET_UTILIZATION)
-  //     a_->dynamic_target_utilization_ = MAX_TARGET_UTILIZATION;
-  //   if (a_->dynamic_target_utilization_ < MIN_TARGET_UTILIZATION)
-  //     a_->dynamic_target_utilization_ = MIN_TARGET_UTILIZATION;
-  //   fprintf(stdout,
-  //           "util=%.4f, lf=%.4f, utilization_=%.4f, dynamic_target_utilization=%.4f, target_utilization=%.4f\n",
-  //           util, a_->load_factor_, a_->utilization_, a_->dynamic_target_utilization_, a_->target_utilization_);
-  //
-  //   a_->utilization_ = 0.0;
-  //   a_->utilization_adjustment_counter_ = 0;
-  // }
 
   // re-initialization for the next interval
   a_->load_ = 0;

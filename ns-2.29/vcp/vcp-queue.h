@@ -13,10 +13,6 @@
 #define DEBUG_QUEUE_MORE
 
 
-#define NUM_T_RHO  10 // "time constant" for utilization adjustment
-#define MAX_TARGET_UTILIZATION      0.999
-#define MIN_TARGET_UTILIZATION      0.100
-
 
 class VcpQueue;
 
@@ -69,15 +65,11 @@ public:
 
   double          target_utilization_;
   double          dynamic_target_utilization_;
-  double          utilization_;
-  double          utilization_adjustment_stepsize_;
-  unsigned int    utilization_adjustment_counter_;
   
   // functions
   VcpQueue();
   ~VcpQueue();
   int command(int argc, const char*const* argv);
-  void set_target_utilization(double capacity);
 
   virtual void enque(Packet* p);
   virtual Packet* deque();
