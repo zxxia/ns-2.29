@@ -108,8 +108,6 @@ public:
   virtual int delay_bind_dispatch(const char *varName, const char *localName, TclObject *tracer);
   void vcp_reset();
 
-  inline int lookup_mimwai_para_index(double win);
-
   virtual void output(int seqno, int reason=0);
   virtual void recv_newack_helper(Packet*);
   virtual void opencwnd(); 

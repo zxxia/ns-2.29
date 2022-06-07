@@ -139,50 +139,6 @@ void VcpSrcAgent::vcp_reset()
   TcpAgent::reset();
 }
 
-// hardcoded for BIN_SIZE = 90 for speeding up simulation
-inline int VcpSrcAgent::lookup_mimwai_para_index(double win)
-{
-  int win_i, idx;
-  
-  win_i = (int)win;
-
-  if (win_i < 1) {
-    idx = 0;
-
-  } else if (win_i < 10) { // 1.1, 1.2, ..., 9.9
-    idx = (int)(win * 10.0 + 0.5) - 10;
-
-  } else if (win_i < 100) { // 10, 11, ..., 99
-    //idx = BIN_SIZE - 10 + (int)(win_i + 0.5);
-    idx = 80 + (int)(win + 0.5);
-
-  } else if (win_i < 1000) { // 100, 110, ..., 990
-    //idx = 2 * BIN_SIZE - 10 + win_i / 10;
-    idx = 170 + win_i / 10;
-
-  } else if (win_i < 10000) { // 1k, 1.1k, ..., 9.9k
-    //idx = 3 * BIN_SIZE - 10 + win_i / 100;
-    idx = 260 + win_i / 100;
-
-  } else if (win_i < 100000) { // 10k, 11k, ..., 99k
-    //idx = 4 * BIN_SIZE - 10 + win_i / 1000;
-    idx = 350 + win_i / 1000;
-
-  } else if (win_i < 1000000) { // 100k, 110k, ..., 990k
-    //idx = 5 * BIN_SIZE - 10 + win_i / 10000;
-    idx = 440 + win_i / 10000;
-
-  } else if (win_i < 10000000) { // 1m, 1.1m, ..., 9.9m
-    //idx = 6 * BIN_SIZE - 10 + win_i / 100000;
-    idx = 530 + win_i / 100000;
-
-  } else if (win_i >= 10000000) {
-    fprintf(stdout, "S -- lookup_mi_para_index: cwnd >= 10 million packets. exiting ...");
-    exit(1);
-  }
-
-  return idx;
-}
 
 void VcpSrcAgent::opencwnd()
 {
