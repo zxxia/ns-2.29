@@ -209,7 +209,7 @@ void VcpSrcAgent::recv_newack_helper(Packet *pkt)
   else
   {
     if (load_factor_encoded_ == OVER_LOAD) {
-	  action_ = ACTION_MD;
+      action_ = ACTION_MD;
     } else if (load_factor_encoded_ == HIGH_LOAD) { 
       action_ = ACTION_AI;
     } else { 
