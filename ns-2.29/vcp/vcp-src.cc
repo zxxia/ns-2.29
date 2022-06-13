@@ -150,13 +150,16 @@ void VcpSrcAgent::opencwnd()
       break;
 
     case 10:
+      // double ai, xi_by_cwnd; //, mw, mw_limiter;
       // on each ack 
-      double ai, xi_by_cwnd; //, mw, mw_limiter;
       if (action_ == ACTION_AI) {
-        ai = rtt_by_td_square_times_alpha_w_ / cwnd_;
+        ai = (rtt_/router_load_measurement_interval_) * \
+             (rtt_/router_load_measurement_interval_) / cwnd_;
         increment = ai;
       } else if (action_ == ACTION_MI) {
-        xi_ = xi_by_lf_;
+        // k is constant
+        xi_ = k * (1 - load_factor) / load_factor
+        rtt_by_trho_ = rtt_ / router_load_measurement_interval_;
         increment = pow(1.0 + xi_, rtt_by_trho_) - 1.0;
       }
       cwnd_ += increment;
