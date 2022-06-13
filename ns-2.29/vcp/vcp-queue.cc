@@ -128,8 +128,8 @@ void VcpQueueLoadMeasurementTimer::expire(Event *)
   a_->interval_end_ = Scheduler::instance().clock();
   time = a_->interval_end_ - a_->interval_begin_;
 
-  // steady queue
-  a_->steady_queue_ = a_->moving_avg_int(last_avg_queue, a_->steady_queue_, 2); // EWMA using 0.25 for current
+  // steady queue, EWMA using 0.25 for current
+  a_->steady_queue_ = a_->moving_avg_int(last_avg_queue, a_->steady_queue_, 2);
 
   // utilization in real number, and load factor in percentage, note byte --> bit
   util = 8.0 * (a_->load_ + a_->queue_weight_ * a_->steady_queue_) / (a_->capacity_ * time);
