@@ -156,19 +156,10 @@ void VcpSrcAgent::opencwnd()
       if (action_ == ACTION_AI) {
 	
 	ai = rtt_by_td_square_times_alpha_w_ / cwnd_;
-    // added by Zhengxu: remove ai_limiter for now
     increment = ai;
 	
       } else if (action_ == ACTION_MI) {
 	
-	//mw = rtt_by_trho_;
-	//mw_limiter = g_mimwai[ MW_LIMITER_TABLE_NUM ][ index ];
-	//increment = (mw < mw_limiter) ? mw : mw_limiter;
-
-	/* firstly, xi_by_lf, precomputed */
-	//xi_by_lf_ = k_ * (100.0 / (double)load_factor_ - 1.0);
-	
-    // add by zhengxu: remove the xi_by_cwnd limit.
     xi_ = xi_by_lf_;
 	increment = pow(1.0 + xi_, rtt_by_trho_) - 1.0;
 	
