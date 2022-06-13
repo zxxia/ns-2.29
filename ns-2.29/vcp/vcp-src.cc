@@ -208,19 +208,14 @@ void VcpSrcAgent::recv_newack_helper(Packet *pkt)
   }
   else
   {
-    if (load_factor_encoded_ == OVER_LOAD) { // overloaded
-      if (md_timer_status_ == MD_TIMER_NONE) { 
-        // first congestion signal, md
-	    action_ = ACTION_MD;
-      }  
+    if (load_factor_encoded_ == OVER_LOAD) {
+	  action_ = ACTION_MD;
     } else if (load_factor_encoded_ == HIGH_LOAD) { 
-      // highload, ai
       action_ = ACTION_AI;
-    } else { // load_factor_encoded_ == LOW_LOAD
-      // low load, mi
+    } else { 
       action_ = ACTION_MI;
     }
-    if (action_ == ACTION_MD) // md
+    if (action_ == ACTION_MD)
       slowdown(0);
   }
 
