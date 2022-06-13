@@ -55,9 +55,6 @@ VcpSrcAgent::VcpSrcAgent() : RenoTcpAgent(), md_wait_timer_(this), pacing_timer_
   action_ = ACTION_MI;
 
   bind("encode_load_factor_", &encode_load_factor_);
-#ifdef DEBUG_SRC
-  fprintf(stdout, "S -- init: encode_load_factor_ = %d.\n", encode_load_factor_);
-#endif
 
   bind("md_wait_timer_counter_", &md_wait_timer_counter_);
   md_wait_timer_counter_ = 0;
@@ -68,23 +65,14 @@ VcpSrcAgent::VcpSrcAgent() : RenoTcpAgent(), md_wait_timer_(this), pacing_timer_
 
   bind("router_load_measurement_interval_", &router_load_measurement_interval_);
   md_wait_interval_1_ = round_timeout_value(router_load_measurement_interval_, TIMER_GRANUNARITY, true);
-#ifdef DEBUG_SRC
-  fprintf(stdout, "S -- init: md_wait_interval_1_ = %.3fs.\n", md_wait_interval_1_);
-#endif
 
   minimal_pacing_interval_ = round_timeout_value(0.5 * router_load_measurement_interval_, TIMER_GRANUNARITY, false);
-#ifdef DEBUG_SRC
-  fprintf(stdout, "S -- init: minimal_pacing_interval_ = %.3fs.\n", minimal_pacing_interval_);
-#endif
 
   bind("k_", &k_);
   bind("alpha_", &alpha_);
   bind("beta_", &beta_);
   bind("w_", &w_);
   xi_by_lf_ = k_ * (100.0 / (double)g_lf[0] - 1.0);
-#ifdef DEBUG_SRC
-  fprintf(stdout, "S -- init: w_=%.3f, k_=%.3f, xi_by_lf_=%.4f.\n", w_, k_, xi_by_lf_);
-#endif
 
   rtt_ = TYPICAL_RTT;
   rtt_by_td_ = rtt_ / TYPICAL_RTT;
@@ -142,13 +130,6 @@ void VcpSrcAgent::vcp_reset()
 
 void VcpSrcAgent::opencwnd()
 {
-#ifdef DEBUG_RUNTIME
-  struct timeval time_begin, time_end;
-  if (gettimeofday(&time_begin, NULL)) exit(1);
-#endif
-#ifdef DEBUG_SRC_MORE
-  double now = Scheduler::instance().clock();
-#endif
   double increment = 0.0;
   //if (cwnd_ < ssthresh_) {
   /* slow-start (exponential) */
@@ -178,9 +159,6 @@ void VcpSrcAgent::opencwnd()
     // added by Zhengxu: remove ai_limiter for now
     increment = ai;
 	
-#ifdef DEBUG_SRC_MORE
-	fprintf(stdout, "S -- opencwnd: action_=%s, cwnd_=%.3f, ai=%.3f, increment=%.3f at %.3fs.\n", "AI", (double)cwnd_, ai, increment, now);
-#endif
       } else if (action_ == ACTION_MI) {
 	
 	//mw = rtt_by_trho_;
@@ -194,9 +172,6 @@ void VcpSrcAgent::opencwnd()
     xi_ = xi_by_lf_;
 	increment = pow(1.0 + xi_, rtt_by_trho_) - 1.0;
 	
-#ifdef DEBUG_SRC_MORE
-    fprintf(stdout, "S -- opencwnd: action_=%s, cwnd_=%.3f, xi_by_cwnd=%.5f, xi_by_lf=%.5f, xi=%.5f, rtt_by_trho=%.3f, increment=%.3f at %.3fs.\n", "MI", (double)cwnd_, xi_by_cwnd, xi_by_lf_, xi_, rtt_by_trho_, increment, now);
-#endif
       }
       
       cwnd_ += increment;
@@ -214,13 +189,6 @@ void VcpSrcAgent::opencwnd()
     if (maxcwnd_ && (int(cwnd_) > maxcwnd_))
       cwnd_ = maxcwnd_;
     
-#ifdef DEBUG_RUNTIME
-    if (gettimeofday(&time_end, NULL)) {
-      fprintf(stdout, "S -- opencwnd: gettimeofday error.");
-      exit(1);
-    }
-    runtime_counter_ += (unsigned int)((1000000 * (time_end.tv_sec - time_begin.tv_sec)) + (time_end.tv_usec - time_begin.tv_usec));
-#endif
     return;
 }
 
@@ -229,15 +197,8 @@ void VcpSrcAgent::slowdown(int how)
   if (how == 0) { // called by vcp
     if (action_ == ACTION_MD) {
 	++ncwndcuts_; 
-#ifdef DEBUG_SRC_MORE
-	double old_cwnd = (double)cwnd_;
-#endif
 	cwnd_ *= beta_;
 	if ((unsigned int)cwnd_ == 0) cwnd_ = 1.0;
-#ifdef DEBUG_SRC_MORE
-	double now = Scheduler::instance().clock();
-	fprintf(stdout, "S -- slowdown: action_=MD, cwnd_=%.3f --> %.3f at %.3fs.\n", old_cwnd, (double)cwnd_, now);
-#endif
     }
   } else {
     // fall back to reno
@@ -255,9 +216,6 @@ void VcpSrcAgent::recv_newack_helper(Packet *pkt)
 
   // above: taken from tcp code
   // --------------------------------------
-#ifdef DEBUG_SRC
-  double now = Scheduler::instance().clock();
-#endif
   hdr_flags* hf = hdr_flags::access(pkt);
   load_factor_encoded_ = hf->lf();
 
@@ -272,9 +230,6 @@ void VcpSrcAgent::recv_newack_helper(Packet *pkt)
     cwnd_ += change;
     if ((int)cwnd_ <= 0) cwnd_ = 1.0;
 
-#ifdef DEBUG_SRC_MORE
-    fprintf(stdout, "S -- loadfactor: action_=MAIMD, cwnd_=%.3f, load_factor_=%d\%, change=%.6f at %.3fs.\n", (double)cwnd_, load_factor_encoded_, change, now);
-#endif
   }
   else
   {
@@ -284,9 +239,6 @@ void VcpSrcAgent::recv_newack_helper(Packet *pkt)
 
 	action_ = ACTION_MD;
 	md_timer_status_ = MD_TIMER_FIRST;
-#ifdef DEBUG_SRC_MORE
-	fprintf(stdout, "S -- md_wait_timeout: md_wait_interval_1_ = %.3fs.\n", md_wait_interval_1_);
-#endif
 	md_wait_timer_.resched(md_wait_interval_1_);
 
       } else if (md_timer_status_ == MD_TIMER_FIRST) { // in the first timer, freeze for one t_rho
@@ -297,23 +249,14 @@ void VcpSrcAgent::recv_newack_helper(Packet *pkt)
 	
 	action_ = ACTION_AI;
       } 
-#ifdef DEBUG_SRC_MORE2
-      fprintf(stdout, "S -- recv: lf_>=%d at %.3fs.\n", g_lf[NUM_LF-1], now);
-#endif
 
     } else if (load_factor_encoded_ == HIGH_LOAD) { // highload, ai
     
       action_ = ACTION_AI;
-#ifdef DEBUG_SRC_MORE2
-      fprintf(stdout, "S -- recv: %d<=lf_<%d at %.3fs.\n", g_lf[NUM_LF-2], g_lf[NUM_LF-1], now);
-#endif
 
     } else { // (load_factor_encoded_ == LOW_LOAD) { // low load, mi
 	
       action_ = ACTION_MI;
-#ifdef DEBUG_SRC_MORE2
-      fprintf(stdout, "S -- recv: lf_<%d at %.3fs.\n", g_lf[NUM_LF-2], now);
-#endif
     }
 
     if (action_ == ACTION_MD) // md
@@ -544,9 +487,6 @@ void VcpSrcMDWaitTimer::expire(Event *)
     a_->md_timer_status_ = MD_TIMER_SECOND;
 
     a_->md_wait_interval_2_ = a_->round_timeout_value(a_->rtt_, TIMER_GRANUNARITY, true);
-#ifdef DEBUG_SRC_MORE
-    fprintf(stdout, "S -- md_wait_timeout: md_wait_interval_2_ = %.3fs.\n", a_->md_wait_interval_2_);
-#endif
     a_->md_wait_timer_.resched(a_->md_wait_interval_2_);
     
   } else { // (a_->md_timer_status_ == MD_TIMER_SECOND)

@@ -41,12 +41,6 @@ VcpQueue::VcpQueue() : DropTail2(), queue_sampling_timer_(this), load_measuremen
   bind("queue_weight_", &queue_weight_);
   bind("queue_sampling_interval_", &queue_sampling_interval_);
   bind("load_measurement_interval_", &load_measurement_interval_);
-#ifdef DEBUG_QUEUE
-  fprintf(stdout, "Q -- init: encode_load_factor_        = %d.\n", encode_load_factor_);
-  fprintf(stdout, "Q -- init: queue_weight_              = %.3f.\n", queue_weight_);
-  fprintf(stdout, "Q -- init: queue_sampling_interval_   = %.3f s.\n", queue_sampling_interval_);
-  fprintf(stdout, "Q -- init: load_measurement_interval_ = %.3f s.\n", load_measurement_interval_);
-#endif
 
   // timers
   interval_begin_ = Scheduler::instance().clock();
@@ -69,9 +63,6 @@ int VcpQueue::command(int argc, const char*const* argv)
 	fprintf(stdout, "Q -- command: set-link-capacity error, capacity_=%.1f bps.\n", capacity_);
 	exit(1);
       }
-#ifdef DEBUG_QUEUE_MORE
-      fprintf(stdout, "Q -- command: capacity_=%.1f bps, target_utilization_=%.3f.\n", capacity_, target_utilization_);
-#endif
       return (TCL_OK);
     }
   }
@@ -88,9 +79,6 @@ void VcpQueue::enque(Packet* p)
   // note the drop-tail2 enque funtion may actally drop the packet
   DropTail2::enque(p);
 
-#ifdef DEBUG_QUEUE_MORE
-  fprintf(stdout, "Q -- enque: load_=%d bytes.\n", load_);
-#endif
 }
 
 Packet* VcpQueue::deque()
@@ -117,10 +105,6 @@ unsigned short VcpQueue::encode(unsigned short load_factor)
   else if (load_factor < lf_[1]) code = HIGH_LOAD & 0x03;
   else                           code = OVER_LOAD & 0x03;
 
-#ifdef DEBUG_QUEUE_MORE
-  fprintf(stdout, "Q -- encode: load_factor=%d\% --> encoded as 0x%x.\n", load_factor, code);
-#endif
-
   return code;
 }
 
@@ -129,10 +113,6 @@ void VcpQueueSamplingTimer::expire(Event *)
   // sample queue length
   a_->last_queue_sum_ += a_->byteLength();
   a_->last_queue_times_ ++;
-
-#ifdef DEBUG_QUEUE_MORE
-  fprintf(stdout, "Q -- last_queue_sum_=%d at %dth sampling.\n", a_->last_queue_sum_, a_->last_queue_times_);
-#endif
 
   a_->queue_sampling_timer_.resched(a_->queue_sampling_interval_);
 }
@@ -170,14 +150,6 @@ void VcpQueueLoadMeasurementTimer::expire(Event *)
     a_->load_factor_encoded_ = a_->encode(a_->load_factor_);
   else
     a_->load_factor_encoded_ = (unsigned short)(100.0 * lfd + 1.0);
-
-#ifdef DEBUG_QUEUE
-  if (a_->encode_load_factor_)
-    fprintf(stdout, "Q -- load_=%8dB, steady_queue_=%8dB, util=%1.3f, lf=%3.1f\%, load_factor_=%3d\% (0x%x) at %.3fs.\n", a_->load_, a_->steady_queue_, util, lfd, a_->load_factor_, a_->load_factor_encoded_, a_->interval_end_);
-  else
-    fprintf(stdout, "Q -- load_=%8d, steady_queue_=%8d,  util=%1.3f, lf=%3.1f\%, load_factor_=%3d\% (raw) at %.3fs.\n", a_->load_, a_->steady_queue_, util, lfd, a_->load_factor_, a_->interval_end_);
-  //fprintf(stdout, "Q -- capacity_=%.1f, \ttime=%.1f at %.3fs.\n", a_->capacity_, time, a_->interval_end_);
-#endif
 
   // re-initialization for the next interval
   a_->load_ = 0;

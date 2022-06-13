@@ -171,9 +171,6 @@ void VcpSink::ack(Packet* opkt)
 	nf->lf() = of->lf();
 	hdr_cmn::access(npkt)->ptype() = PT_ACK;
 
-#ifdef DEBUG_SINK	
-	fprintf(stdout, "D -- ack: encoded lf_=%d at %.3fs.\n", nf->lf(), Scheduler::instance().clock());
-#endif
 	// end:   here is the only change over the tcpsink code -----
 
         acker_->append_ack(hdr_cmn::access(npkt), ntcp, otcp->seqno());
