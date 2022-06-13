@@ -166,12 +166,7 @@ void VcpSink::ack(Packet* opkt)
                  // specifications in the internet draft
                 nf->ecnecho() = 1;
 
-	// vcp -xy
-	// begin: here is the only change over the tcpsink code -----
-	nf->lf() = of->lf();
-	hdr_cmn::access(npkt)->ptype() = PT_ACK;
-
-	// end:   here is the only change over the tcpsink code -----
+	    ackpkt_header->loadfactor = data_pkt_header->loadfactor;
 
         acker_->append_ack(hdr_cmn::access(npkt), ntcp, otcp->seqno());
         add_to_ack(npkt);

@@ -150,33 +150,19 @@ void VcpSrcAgent::opencwnd()
       break;
 
     case 10:
-      /* vcp -xy */
       double ai, xi_by_cwnd; //, mw, mw_limiter;
-      
       if (action_ == ACTION_AI) {
-	
-	ai = rtt_by_td_square_times_alpha_w_ / cwnd_;
-    increment = ai;
-	
+	    ai = rtt_by_td_square_times_alpha_w_ / cwnd_;
+        increment = ai;
       } else if (action_ == ACTION_MI) {
-	
-    xi_ = xi_by_lf_;
-	increment = pow(1.0 + xi_, rtt_by_trho_) - 1.0;
-	
+        xi_ = xi_by_lf_;
+	    increment = pow(1.0 + xi_, rtt_by_trho_) - 1.0;
       }
-      
       cwnd_ += increment;
       break;
-      
     default:
-#ifdef notdef
-      /*XXX*/
-      error("illegal window option %d", wnd_option_);
-#endif
       abort();
     }
-    //}
-    // if maxcwnd_ is set (nonzero), make it the cwnd limit
     if (maxcwnd_ && (int(cwnd_) > maxcwnd_))
       cwnd_ = maxcwnd_;
     
@@ -187,9 +173,9 @@ void VcpSrcAgent::slowdown(int how)
 {
   if (how == 0) { // called by vcp
     if (action_ == ACTION_MD) {
-	++ncwndcuts_; 
-	cwnd_ *= beta_;
-	if ((unsigned int)cwnd_ == 0) cwnd_ = 1.0;
+	  ++ncwndcuts_; 
+	  cwnd_ *= beta_;
+	  if ((unsigned int)cwnd_ == 0) cwnd_ = 1.0;
     }
   } else {
     // fall back to reno
@@ -211,7 +197,6 @@ void VcpSrcAgent::recv_newack_helper(Packet *pkt)
   load_factor_encoded_ = hf->lf();
 
   if (!encode_load_factor_) {
-    
     #define LF_BOUND  8000  // --> m = 1/16
     double m = (load_factor_encoded_ <= LF_BOUND) ? 0.0625 : k_ * (10000.0 / (double)load_factor_encoded_ - 1.0);
     m = pow(1.0 + m, rtt_by_trho_) - 1.0;
@@ -220,40 +205,23 @@ void VcpSrcAgent::recv_newack_helper(Packet *pkt)
     double change = (m + a); // * rtt_by_td_;
     cwnd_ += change;
     if ((int)cwnd_ <= 0) cwnd_ = 1.0;
-
   }
   else
   {
     if (load_factor_encoded_ == OVER_LOAD) { // overloaded
-	    
-      if (md_timer_status_ == MD_TIMER_NONE) { // first congestion signal, md
-
-	action_ = ACTION_MD;
-	md_timer_status_ = MD_TIMER_FIRST;
-	md_wait_timer_.resched(md_wait_interval_1_);
-
-      } else if (md_timer_status_ == MD_TIMER_FIRST) { // in the first timer, freeze for one t_rho
-
-	action_ = ACTION_FRZ;
-
-      } else if (md_timer_status_ == MD_TIMER_SECOND) { // in the second timer, ai for one rtt
-	
-	action_ = ACTION_AI;
-      } 
-
-    } else if (load_factor_encoded_ == HIGH_LOAD) { // highload, ai
-    
+      if (md_timer_status_ == MD_TIMER_NONE) { 
+        // first congestion signal, md
+	    action_ = ACTION_MD;
+      }  
+    } else if (load_factor_encoded_ == HIGH_LOAD) { 
+      // highload, ai
       action_ = ACTION_AI;
-
-    } else { // (load_factor_encoded_ == LOW_LOAD) { // low load, mi
-	
+    } else { // load_factor_encoded_ == LOW_LOAD
+      // low load, mi
       action_ = ACTION_MI;
     }
-
     if (action_ == ACTION_MD) // md
       slowdown(0);
-    else if (action_ != ACTION_FRZ) // ai, mi
-      opencwnd();
   }
 
   return;

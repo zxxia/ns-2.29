@@ -87,9 +87,10 @@ Packet* VcpQueue::deque()
   Packet *p = DropTail2::deque();
   if (p != NULL && (hdr_cmn::access(p)->ptype() == PT_TCP)) {
     // tag lf, if this router is more congested than the upstream one
-    hdr_flags *hf = hdr_flags::access(p);
-    if (hf->lf() < load_factor_encoded_) {
-      hf->lf() = load_factor_encoded_;
+    hdr_flags *pkt_hdr_flags = hdr_flags::access(p);
+
+    if (pkt_hdr_flags ->load_factor < load_factor_encoded_) {
+      pkt_hdr_flags->load_factor = load_factor_encoded_;
     }
   }
 
@@ -138,18 +139,10 @@ void VcpQueueLoadMeasurementTimer::expire(Event *)
   lfd  = 100.0 * util / a_->dynamic_target_utilization_;
   lfi  = (unsigned short)(lfd + 1.0);  // round up
   assert (lfi >= 1);
-
-  // get a smooth version of load factor?
-  if (a_->smoothen_load_factor_)
-    a_->load_factor_ = a_->moving_avg_int(a_->load_factor_, lfi, 2);  // EWMA using 0.75 for current
-  else
-    a_->load_factor_ = lfi;
+  a_->load_factor_ = lfi;
 
   // encoding
-  if (a_->encode_load_factor_)
-    a_->load_factor_encoded_ = a_->encode(a_->load_factor_);
-  else
-    a_->load_factor_encoded_ = (unsigned short)(100.0 * lfd + 1.0);
+  a_->load_factor_encoded_ = a_->encode(a_->load_factor_);
 
   // re-initialization for the next interval
   a_->load_ = 0;
