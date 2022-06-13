@@ -83,18 +83,12 @@ void VcpQueue::enque(Packet* p)
 
 Packet* VcpQueue::deque()
 {
-  // put the load factor in the data (not ack) packet's ip header (ecn) before it departs
-  Packet *p = DropTail2::deque();
-  if (p != NULL && (hdr_cmn::access(p)->ptype() == PT_TCP)) {
-    // tag lf, if this router is more congested than the upstream one
-    hdr_flags *pkt_hdr_flags = hdr_flags::access(p);
-
-    if (pkt_hdr_flags ->load_factor < load_factor_encoded_) {
-      pkt_hdr_flags->load_factor = load_factor_encoded_;
-    }
+  // put the load factor in the data (not ack) packet's ip header
+  // (ecn) before it departs
+  // tag lf, if this router is more congested than the upstream one
+  if (pkt_header ->load_factor < load_factor_encoded_) {
+    pkt_hdr_flags->load_factor = load_factor_encoded_;
   }
-
-  return p;
 }
 
 // encode utilization into two bits
