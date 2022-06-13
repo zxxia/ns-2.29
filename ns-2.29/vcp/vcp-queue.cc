@@ -132,8 +132,8 @@ void VcpQueueLoadMeasurementTimer::expire(Event *)
   a_->steady_queue_ = a_->moving_avg_int(last_avg_queue, a_->steady_queue_, 2); // EWMA using 0.25 for current
 
   // utilization in real number, and load factor in percentage, note byte --> bit
-  util = 8.0 * ((double)a_->load_ + a_->queue_weight_ * (double)a_->steady_queue_) / (a_->capacity_ * time);
-  a_->load_factor_  = (unsigned short)(100.0 * util / a_->dynamic_target_utilization_ + 1.0);
+  util = 8.0 * (a_->load_ + a_->queue_weight_ * a_->steady_queue_) / (a_->capacity_ * time);
+  a_->load_factor_  = (100.0 * util / a_->dynamic_target_utilization_ + 1.0);
 
   // encoding load factor into 2 bits
   a_->load_factor_encoded_ = a_->encode(a_->load_factor_);
