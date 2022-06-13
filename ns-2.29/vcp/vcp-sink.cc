@@ -166,7 +166,7 @@ void VcpSink::ack(Packet* opkt)
                  // specifications in the internet draft
                 nf->ecnecho() = 1;
 
-	    ackpkt_header->loadfactor = data_pkt_header->loadfactor;
+        ack_pkt_header->loadfactor = data_pkt_header->loadfactor;
 
         acker_->append_ack(hdr_cmn::access(npkt), ntcp, otcp->seqno());
         add_to_ack(npkt);
